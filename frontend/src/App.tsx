@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import "./App.css";
+import { useEffect, useMemo, useState } from "react";
 
 const WordRow = styled.div<{ $columns?: number; $gap: string }>`
     display: grid;
@@ -39,76 +40,147 @@ const keyboardKeys = [
 
 function App() {
     const wordTest = "arepa";
-    const LIVES = 6;
+    const MAX_LIVES = 6;
+    // let currentLive = 0;
+
+    const [word, setWord] = useState<string>("");
+    const [isEnterPressed, setIsEnterPressed] = useState<boolean>(false);
+    const [isGameOver, setIsGameOver] = useState<boolean>(false);
+    const [currentLive, setCurrentLive] = useState<number>(0);
+    const [gameBoard, setGameBoard] = useState(
+        Array.from({ length: MAX_LIVES }, () => "#".repeat(wordTest.length)),
+    );
+
+    const bannedKeys = useMemo(() => ["Backspace", "Enter"], []);
+
+    useEffect(() => {
+        function handleKeyPress(e: KeyboardEvent) {
+            if (e.key === "Backspace") {
+                setWord((prev) => prev.slice(0, -1));
+                return;
+            }
+
+            if (e.key === "Enter") {
+                if (word.length !== wordTest.length) {
+                    return;
+                }
+
+                setIsEnterPressed(true);
+            }
+
+            if (word.length >= wordTest.length) return;
+
+            setWord((prev) => {
+                if (bannedKeys.includes(e.key)) return prev + "";
+
+                return prev + e.key;
+            });
+        }
+
+        window.addEventListener("keydown", handleKeyPress);
+        return () => window.removeEventListener("keydown", handleKeyPress);
+    }, [word, bannedKeys]);
+
+    useEffect(() => {
+        if (isEnterPressed) {
+            // if (word === wordTest) {
+            //     console.log("YOU WON!");
+            //     setIsGameOver(true);
+            //     return;
+            // }
+
+            setIsEnterPressed(false);
+
+            setGameBoard((prev) =>
+                prev.map((val, i) => {
+                    if (i === currentLive) {
+                        return word;
+                    }
+
+                    return val;
+                }),
+            );
+
+            setCurrentLive((prev) => prev + 1);
+            setWord("");
+            return;
+        }
+    }, [isEnterPressed, word, currentLive]);
+
+    console.log(gameBoard);
+    console.log("word:", word);
 
     return (
         <>
-            {Array.from({ length: LIVES }).map((_, i) => (
-                <WordRow $columns={`${wordTest.length}`} $gap="10px">
-                    {splitWord(wordTest).map((letter) => {
-                        if (i === 2) {
-                            return (
-                                <BoxInactive>
-                                    <span
-                                        style={{
-                                            color: "#E4E5F2",
-                                            fontWeight: "600",
-                                            fontSize: "1.5rem",
-                                        }}
-                                    >
-                                        {letter}
-                                    </span>
-                                </BoxInactive>
-                            );
-                        }
+            {gameBoard.map((word, i) => {
+                return (
+                    <WordRow $columns={`${wordTest.length}`} $gap="10px">
+                        {Array.from(word, (letter, j) => {
+                            if (wordTest[j] === word[j]) {
+                                return (
+                                    <BoxCorrect>
+                                        <span
+                                            style={{
+                                                color: "#E4E5F2",
+                                                fontWeight: "600",
+                                                fontSize: "1.5rem",
+                                            }}
+                                        >
+                                            {letter}
+                                        </span>
+                                    </BoxCorrect>
+                                );
+                            }
 
-                        if (i === 4) {
-                            return (
-                                <BoxCorrect>
-                                    <span
-                                        style={{
-                                            color: "#E4E5F2",
-                                            fontWeight: "600",
-                                            fontSize: "1.5rem",
-                                        }}
-                                    >
-                                        {letter}
-                                    </span>
-                                </BoxCorrect>
-                            );
-                        }
-                        if (i === 5) {
-                            return (
-                                <BoxYellow>
-                                    <span
-                                        style={{
-                                            color: "#E4E5F2",
-                                            fontWeight: "600",
-                                            fontSize: "1.5rem",
-                                        }}
-                                    >
-                                        {letter}
-                                    </span>
-                                </BoxYellow>
-                            );
-                        }
+                            if (wordTest.includes(letter)) {
+                                return (
+                                    <BoxYellow>
+                                        <span
+                                            style={{
+                                                color: "#E4E5F2",
+                                                fontWeight: "600",
+                                                fontSize: "1.5rem",
+                                            }}
+                                        >
+                                            {letter}
+                                        </span>
+                                    </BoxYellow>
+                                );
+                            }
 
-                        return (
-                            <Box>
-                                <span
-                                    style={{
-                                        color: "#E4E5F2",
-                                        fontWeight: "600",
-                                        fontSize: "1.5rem",
-                                    }}
-                                >
-                                    {letter}
-                                </span>
-                            </Box>
-                        );
-                    })}
-                </WordRow>
-            ))}
+                            if (!wordTest.includes(letter) && !word.includes("#")) {
+                                return (
+                                    <BoxInactive>
+                                        <span
+                                            style={{
+                                                color: "#E4E5F2",
+                                                fontWeight: "600",
+                                                fontSize: "1.5rem",
+                                            }}
+                                        >
+                                            {letter}
+                                        </span>
+                                    </BoxInactive>
+                                );
+                            }
+
+                            return (
+                                <Box>
+                                    <span
+                                        style={{
+                                            color: "#E4E5F2",
+                                            fontWeight: "600",
+                                            fontSize: "1.5rem",
+                                        }}
+                                    >
+                                        {letter === "#" ? "" : letter}
+                                    </span>
+                                </Box>
+                            );
+                        })}
+                    </WordRow>
+                );
+            })}
 
             {keyboardKeys.map((row) => {
                 return (
@@ -139,10 +211,6 @@ function App() {
             })}
         </>
     );
-}
-
-function splitWord(word: string): string[] {
-    return word.toUpperCase().split("");
 }
 
 export default App;
