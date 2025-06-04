@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import "./App.css";
 import { useEffect, useMemo, useState } from "react";
+import { useKeyPressed } from "./hooks/useKeyPressed";
 
 const WordRow = styled.div<{ $columns?: number; $gap: string }>`
     display: grid;
@@ -41,47 +42,28 @@ const keyboardKeys = [
 function App() {
     const wordTest = "arepa";
     const MAX_LIVES = 6;
-    // let currentLive = 0;
-
-    const [word, setWord] = useState<string>("");
-    const [isEnterPressed, setIsEnterPressed] = useState<boolean>(false);
     const [isGameOver, setIsGameOver] = useState<boolean>(false);
     const [currentLive, setCurrentLive] = useState<number>(0);
+
     const [gameBoard, setGameBoard] = useState(
         Array.from({ length: MAX_LIVES }, () => "#".repeat(wordTest.length)),
     );
 
-    const bannedKeys = useMemo(() => ["Backspace", "Enter"], []);
+    const { isEnterPressed, word, setIsEnterPressed, setWord } = useKeyPressed(wordTest);
 
     useEffect(() => {
-        function handleKeyPress(e: KeyboardEvent) {
-            if (e.key === "Backspace") {
-                setWord((prev) => prev.slice(0, -1));
-                return;
-            }
-
-            if (e.key === "Enter") {
-                if (word.length !== wordTest.length) {
-                    return;
+        setGameBoard((prev) => {
+            return prev.map((val, i) => {
+                if (i === currentLive) {
+                    return word;
                 }
-
-                setIsEnterPressed(true);
-            }
-
-            if (word.length >= wordTest.length) return;
-
-            setWord((prev) => {
-                if (bannedKeys.includes(e.key)) return prev + "";
-
-                return prev + e.key;
+                return val;
             });
-        }
-
-        window.addEventListener("keydown", handleKeyPress);
-        return () => window.removeEventListener("keydown", handleKeyPress);
-    }, [word, bannedKeys]);
+        });
+    }, [word, currentLive]);
 
     useEffect(() => {
+        // TODO: Handling press enter behavior (change letter of blocks)
         if (isEnterPressed) {
             // if (word === wordTest) {
             //     console.log("YOU WON!");
@@ -91,28 +73,37 @@ function App() {
 
             setIsEnterPressed(false);
 
-            setGameBoard((prev) =>
-                prev.map((val, i) => {
-                    if (i === currentLive) {
-                        return word;
-                    }
-
-                    return val;
-                }),
-            );
-
             setCurrentLive((prev) => prev + 1);
-            setWord("");
+            setWord("#".repeat(wordTest.length));
             return;
         }
     }, [isEnterPressed, word, currentLive]);
 
-    console.log(gameBoard);
-    console.log("word:", word);
-
     return (
         <>
             {gameBoard.map((word, i) => {
+                return (
+                    <WordRow $columns={`${wordTest.length}`} $gap="10px">
+                        {Array.from(word, (letter) => {
+                            return (
+                                <Box>
+                                    <span
+                                        style={{
+                                            color: "#E4E5F2",
+                                            fontWeight: "600",
+                                            fontSize: "1.5rem",
+                                        }}
+                                    >
+                                        {letter === "#" ? "" : letter}
+                                    </span>
+                                </Box>
+                            );
+                        })}
+                    </WordRow>
+                );
+            })}
+
+            {/* {gameBoard.map((word, i) => {
                 return (
                     <WordRow $columns={`${wordTest.length}`} $gap="10px">
                         {Array.from(word, (letter, j) => {
@@ -180,37 +171,41 @@ function App() {
                         })}
                     </WordRow>
                 );
-            })}
+            })} */}
 
-            {keyboardKeys.map((row) => {
-                return (
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: `repeat(${row.length}, 1fr)`,
-                            padding: "0 10px",
-                            gap: "10px",
-                            marginBottom: "0.5em",
-                        }}
-                    >
-                        {row.map((letter) => (
-                            <div
-                                style={{
-                                    border: "1px solid white",
-                                    color: "#E4E5F2",
-                                    fontSize: "1.35em",
-                                    padding: "0.3em 0.25em",
-                                    textAlign: "center",
-                                }}
-                            >
-                                {letter}
-                            </div>
-                        ))}
-                    </div>
-                );
-            })}
+            <Keys />
         </>
     );
+}
+
+function Keys() {
+    return keyboardKeys.map((row) => {
+        return (
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: `repeat(${row.length}, 1fr)`,
+                    padding: "0 10px",
+                    gap: "10px",
+                    marginBottom: "0.5em",
+                }}
+            >
+                {row.map((letter) => (
+                    <div
+                        style={{
+                            border: "1px solid white",
+                            color: "#E4E5F2",
+                            fontSize: "1.35em",
+                            padding: "0.3em 0.25em",
+                            textAlign: "center",
+                        }}
+                    >
+                        {letter}
+                    </div>
+                ))}
+            </div>
+        );
+    });
 }
 
 export default App;
