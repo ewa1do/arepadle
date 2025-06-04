@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState } from "react";
+import { keyboardKeys } from "../lib/keyboardKeys";
 
 export function useKeyPressed(wordTest: string) {
     const [word, setWord] = useState<string>("#".repeat(wordTest.length));
@@ -7,6 +8,13 @@ export function useKeyPressed(wordTest: string) {
 
     useEffect(() => {
         function handleKeyPress(e: KeyboardEvent) {
+            if (
+                !keyboardKeys.flat().includes(e.key.toUpperCase()) &&
+                !["Enter", "Backspace"].includes(e.key)
+            ) {
+                return;
+            }
+
             if (e.key === "Backspace") {
                 if (word[word.length - 1] !== "#") {
                     const deletedWord = word.slice(0, -1) + "#";
@@ -43,7 +51,7 @@ export function useKeyPressed(wordTest: string) {
 
                 return prev
                     .split("")
-                    .map((letter, i) => (i === findFirstPlaceholder ? e.key : letter))
+                    .map((letter, i) => (i === findFirstPlaceholder ? e.key.toUpperCase() : letter))
                     .join("");
             });
         }
