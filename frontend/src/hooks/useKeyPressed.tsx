@@ -8,7 +8,21 @@ export function useKeyPressed(wordTest: string) {
     useEffect(() => {
         function handleKeyPress(e: KeyboardEvent) {
             if (e.key === "Backspace") {
-                setWord((prev) => prev.slice(0, -1));
+                if (word[word.length - 1] !== "#") {
+                    const deletedWord = word.slice(0, -1) + "#";
+
+                    setWord(deletedWord);
+                    return;
+                }
+
+                const getLastChar = word.split("").indexOf("#") - 1;
+
+                const deleteLastChar = word
+                    .split("")
+                    .map((char, i) => (i === getLastChar ? "#" : char))
+                    .join("");
+
+                setWord(deleteLastChar);
                 return;
             }
 
