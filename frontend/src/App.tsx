@@ -1,7 +1,8 @@
 import styled from "styled-components";
 import "./App.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useKeyPressed } from "./hooks/useKeyPressed";
+import { keyboardKeys } from "./lib/keyboardKeys";
 
 const WordRow = styled.div<{ $columns?: number; $gap: string }>`
     display: grid;
@@ -21,7 +22,7 @@ const Box = styled.div`
     border: 2px solid white;
 `;
 
-const BoxInactive = styled(Box)`
+const BoxIncorrect = styled(Box)`
     background-color: #7e7f9a;
 `;
 
@@ -29,15 +30,15 @@ const BoxCorrect = styled(Box)`
     background-color: #28536b;
 `;
 
-const BoxYellow = styled(Box)`
+const BoxGuess = styled(Box)`
     background-color: #f1c604;
 `;
 
-const keyboardKeys = [
-    ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-    ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Ñ"],
-    ["BackSpace", "Z", "X", "C", "V", "B", "N", "M", "Enter"],
-];
+const Letter = styled.span`
+    color: #e4e5f2;
+    font-weight: 600;
+    font-size: 1.5rem;
+`;
 
 function App() {
     const wordTest = "arepa";
@@ -71,111 +72,65 @@ function App() {
             //     return;
             // }
 
-            setIsEnterPressed(false);
-
             setCurrentLive((prev) => prev + 1);
             setWord("#".repeat(wordTest.length));
+            setIsEnterPressed(false);
             return;
         }
     }, [isEnterPressed, word, currentLive]);
 
     return (
         <>
-            {gameBoard.map((word, i) => {
-                return (
-                    <WordRow $columns={`${wordTest.length}`} $gap="10px">
-                        {Array.from(word, (letter) => {
-                            return (
-                                <Box>
-                                    <span
-                                        style={{
-                                            color: "#E4E5F2",
-                                            fontWeight: "600",
-                                            fontSize: "1.5rem",
-                                        }}
-                                    >
-                                        {letter === "#" ? "" : letter}
-                                    </span>
-                                </Box>
-                            );
-                        })}
-                    </WordRow>
-                );
-            })}
-
-            {/* {gameBoard.map((word, i) => {
-                return (
-                    <WordRow $columns={`${wordTest.length}`} $gap="10px">
-                        {Array.from(word, (letter, j) => {
-                            if (wordTest[j] === word[j]) {
-                                return (
-                                    <BoxCorrect>
-                                        <span
-                                            style={{
-                                                color: "#E4E5F2",
-                                                fontWeight: "600",
-                                                fontSize: "1.5rem",
-                                            }}
-                                        >
-                                            {letter}
-                                        </span>
-                                    </BoxCorrect>
-                                );
-                            }
-
-                            if (wordTest.includes(letter)) {
-                                return (
-                                    <BoxYellow>
-                                        <span
-                                            style={{
-                                                color: "#E4E5F2",
-                                                fontWeight: "600",
-                                                fontSize: "1.5rem",
-                                            }}
-                                        >
-                                            {letter}
-                                        </span>
-                                    </BoxYellow>
-                                );
-                            }
-
-                            if (!wordTest.includes(letter) && !word.includes("#")) {
-                                return (
-                                    <BoxInactive>
-                                        <span
-                                            style={{
-                                                color: "#E4E5F2",
-                                                fontWeight: "600",
-                                                fontSize: "1.5rem",
-                                            }}
-                                        >
-                                            {letter}
-                                        </span>
-                                    </BoxInactive>
-                                );
-                            }
-
-                            return (
-                                <Box>
-                                    <span
-                                        style={{
-                                            color: "#E4E5F2",
-                                            fontWeight: "600",
-                                            fontSize: "1.5rem",
-                                        }}
-                                    >
-                                        {letter === "#" ? "" : letter}
-                                    </span>
-                                </Box>
-                            );
-                        })}
-                    </WordRow>
-                );
-            })} */}
-
+            <Gameboard {...{ gameBoard, currentLive, wordTest }} />
             <Keys />
         </>
     );
+}
+
+interface BoardProps {
+    gameBoard: string[];
+    currentLive: number;
+    wordTest: string;
+}
+
+function Gameboard({ gameBoard, currentLive, wordTest }: BoardProps) {
+    return gameBoard.map((word, i) => {
+        return (
+            <WordRow $columns={`${wordTest.length}`} $gap="10px">
+                {Array.from(word, (char, j) => {
+                    if (i >= currentLive) {
+                        return (
+                            <Box>
+                                <Letter>{char === "#" ? "" : char}</Letter>
+                            </Box>
+                        );
+                    }
+
+                    if (wordTest[j].toUpperCase() === word[j].toUpperCase()) {
+                        return (
+                            <BoxCorrect>
+                                <Letter>{char}</Letter>
+                            </BoxCorrect>
+                        );
+                    }
+
+                    if (wordTest.toUpperCase().includes(char)) {
+                        return (
+                            <BoxGuess>
+                                <Letter>{char}</Letter>
+                            </BoxGuess>
+                        );
+                    }
+
+                    return (
+                        <BoxIncorrect>
+                            <Letter>{char}</Letter>
+                        </BoxIncorrect>
+                    );
+                })}
+            </WordRow>
+        );
+    });
 }
 
 function Keys() {
