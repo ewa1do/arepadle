@@ -1,9 +1,15 @@
 import { useMemo, useEffect, useState } from "react";
 import { keyboardKeys } from "../lib/keyboardKeys";
 
-export function useKeyPressed(wordTest: string) {
-    const [word, setWord] = useState<string>("#".repeat(wordTest.length));
-    const [isEnterPressed, setIsEnterPressed] = useState<boolean>(false);
+export function useKeyPressed(
+    wordTest: string,
+    word: string,
+    setWord: React.Dispatch<React.SetStateAction<string>>,
+    isEnterPressed: boolean,
+    setIsEnterPressed: React.Dispatch<React.SetStateAction<boolean>>,
+) {
+    // const [word, setWord] = useState<string>("#".repeat(wordTest.length));
+    // const [isEnterPressed, setIsEnterPressed] = useState<boolean>(false);
     const bannedKeys = useMemo(() => ["Backspace", "Enter"], []);
 
     useEffect(() => {
@@ -60,5 +66,5 @@ export function useKeyPressed(wordTest: string) {
         return () => window.removeEventListener("keydown", handleKeyPress);
     }, [word, bannedKeys, wordTest.length]);
 
-    return { word, isEnterPressed, setIsEnterPressed, setWord };
+    // return { isEnterPressed, setIsEnterPressed };
 }
