@@ -45,12 +45,14 @@ function App() {
     const MAX_LIVES = 6;
     const [isGameOver, setIsGameOver] = useState<boolean>(false);
     const [currentLive, setCurrentLive] = useState<number>(0);
+    const [word, setWord] = useState<string>("#".repeat(wordTest.length));
+    const [isEnterPressed, setIsEnterPressed] = useState<boolean>(false);
 
     const [gameBoard, setGameBoard] = useState(
         Array.from({ length: MAX_LIVES }, () => "#".repeat(wordTest.length)),
     );
 
-    const { isEnterPressed, word, setIsEnterPressed, setWord } = useKeyPressed(wordTest);
+    useKeyPressed(wordTest, word, setWord, isEnterPressed, setIsEnterPressed);
 
     useEffect(() => {
         setGameBoard((prev) => {
@@ -82,7 +84,14 @@ function App() {
     return (
         <>
             <Gameboard {...{ gameBoard, currentLive, wordTest }} />
-            <Keys />
+            <Keys
+                {...{
+                    word,
+                    wordTest,
+                    setIsEnterPressed,
+                    setWord,
+                }}
+            />
         </>
     );
 }
@@ -133,7 +142,14 @@ function Gameboard({ gameBoard, currentLive, wordTest }: BoardProps) {
     });
 }
 
-function Keys() {
+interface KeyProps {
+    word: string;
+    setWord: React.Dispatch<React.SetStateAction<string>>;
+    setIsEnterPressed: React.Dispatch<React.SetStateAction<boolean>>;
+    wordTest: string;
+}
+
+function Keys({ setIsEnterPressed, setWord, word, wordTest }: KeyProps) {
     return keyboardKeys.map((row) => {
         return (
             <div
@@ -143,6 +159,49 @@ function Keys() {
                     padding: "0 10px",
                     gap: "10px",
                     marginBottom: "0.5em",
+                }}
+                onClick={(e) => {
+                    const target = e.target as HTMLDivElement;
+
+                    if (target.textContent === "Backspace") {
+                        if (word[word.length - 1] !== "#") {
+                            const deletedWord = word.slice(0, -1) + "#";
+
+                            setWord(deletedWord);
+                            return;
+                        }
+
+                        const getLastChar = word.split("").indexOf("#") - 1;
+
+                        const deleteLastChar = word
+                            .split("")
+                            .map((char, i) => (i === getLastChar ? "#" : char))
+                            .join("");
+
+                        setWord(deleteLastChar);
+                        return;
+                    }
+
+                    if (target.textContent === "Enter") {
+                        if (word.length !== wordTest.length) {
+                            return;
+                        }
+
+                        setIsEnterPressed(true);
+                    }
+
+                    return setWord((prev) => {
+                        const findFirstPlaceholder = prev.split("").findIndex((val) => val === "#");
+
+                        return prev
+                            .split("")
+                            .map((letter, i) =>
+                                i === findFirstPlaceholder
+                                    ? target.textContent?.toUpperCase()
+                                    : letter,
+                            )
+                            .join("");
+                    });
                 }}
             >
                 {row.map((letter) => (
